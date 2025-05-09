@@ -9,6 +9,7 @@ import {
   isSameMonth,
   getDay,
   subDays,
+  subMonths,
 } from "date-fns";
 import { ru } from "date-fns/locale";
 
@@ -21,29 +22,32 @@ const shiftColors = [
 ];
 
 const weekDays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
-
-const teamPatterns: Record<string, number[]> = {
+enum Team {
+  A = "A",
+  B = "B",
+  C = "C",
+  D = "D",
+}
+const teamPatterns: Record<Team, number[]> = {
   D: [1, 1, 2, 2, 3, 3, 0, 0],
   A: [2, 2, 3, 3, 0, 0, 1, 1],
   B: [3, 3, 0, 0, 1, 1, 2, 2],
   C: [0, 0, 1, 1, 2, 2, 3, 3],
 };
 
-const baseDate = new Date("2025-05-02");
+const baseDate = new Date("2025-01-20");
 
 export const ShiftScheduler = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
-  const [selectedTeam, setSelectedTeamState] = useState<"A" | "B" | "C" | "D">(
-    () => {
-      const savedTeam = localStorage.getItem("selectedTeam");
-      return (savedTeam as "A" | "B" | "C" | "D") ?? "A";
-    }
-  );
+  const [selectedTeam, setSelectedTeamState] = useState<Team>(() => {
+    const savedTeam = localStorage.getItem("selectedTeam") as Team | null;
+    return savedTeam ?? Team.A;
+  });
 
-  const setSelectedTeam = (team: "A" | "B" | "C" | "D") => {
+  const setSelectedTeam = useCallback((team: Team) => {
     setSelectedTeamState(team);
     localStorage.setItem("selectedTeam", team);
-  };
+  }, []);
 
   const prevMonth = () => setSelectedMonth(addMonths(selectedMonth, -1));
   const nextMonth = () => setSelectedMonth(addMonths(selectedMonth, 1));
@@ -101,7 +105,7 @@ export const ShiftScheduler = () => {
   }, [selectedMonth]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="container md:max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6">
         <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-center">
           График смен
@@ -110,7 +114,7 @@ export const ShiftScheduler = () => {
         <div className="mb-6">
           <h2 className="text-lg font-semibold mb-2">Выберите свою команду:</h2>
           <div className="flex flex-wrap gap-2">
-            {(["A", "B", "C", "D"] as const).map((team) => (
+            {Object.values(Team).map((team) => (
               <button
                 key={team}
                 onClick={() => setSelectedTeam(team)}
@@ -177,7 +181,7 @@ export const ShiftScheduler = () => {
         <div className="mt-10">
           <h2 className="text-xl font-bold mb-4 text-center">Планировщик</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[0, 1, 2].map((offset) => {
+            {[-1, 0, 1].map((offset) => {
               const monthDate = addMonths(selectedMonth, offset);
               const monthStart = startOfMonth(monthDate);
               const monthEnd = endOfMonth(monthDate);
